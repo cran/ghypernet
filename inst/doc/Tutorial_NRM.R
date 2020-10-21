@@ -137,31 +137,6 @@ svp_popularity_mat <- ifelse(svp_popularity_mat == 'SVP', 10, 1)
 #             directed = TRUE, selfloops = FALSE, regular = FALSE)
 
 ## -----------------------------------------------------------------------------
-## Texreg: does not (yet) support nrm or gyhpe-class
-# use the extract()-function to make this available:
-extract.nrm.cluster <- function(model,sumsum){
-  # calculate SE, tvalues and pvalues
-  coeffic <- as.numeric(model$coef)
-  stderr <- (model$confint[,2] - model$confint[,1])/5.15
-  tvalues = coeffic/stderr
-  pval <- exp(-0.717*tvalues - 0.416*tvalues^2)
-  
-  # then create and return a texreg object (replace NULL with actual values):
-  tr <- createTexreg(
-    coef.names = names(model$coef),    # character vector of coefficient labels
-    coef = coeffic,          # numeric vector with coefficients
-    se = stderr,            # numeric vector with standard error values
-    pvalues = pval,       # numeric vector with p-values
-    gof.names = c("AIC", "McFadden $pseudo-R^2$"),     # character vector with goodness-of-fit labels
-    gof = c(model$AIC, model$R2)           # numeric vector of goodness-of-fit statistics
-    #gof.decimal = NULL    # logical vector: GOF statistic has decimal points?
-  )
-  return(tr)
-}
-setMethod("extract", signature = className("nrm", "ghype"), 
-          definition = extract.nrm.cluster)
-
-## -----------------------------------------------------------------------------
 nfit1 <- nrm(adj = cospons_mat, 
                       w = list(same_canton = canton_homophilymat), 
                       directed = TRUE)

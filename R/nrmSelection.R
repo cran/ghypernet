@@ -15,8 +15,9 @@
 #' @examples
 #' \donttest{
 #' data('highschool.predictors')
-#' nrm_selection(adj=contacts.adj,predictors=createPredictors(highschool.predictors),
+#' models <- nrm_selection(adj=contacts.adj,predictors=create_predictors(highschool.predictors),
 #'   ncores=1,directed=FALSE,selfloops=FALSE)
+#' texreg::screenreg(models$models, digits=3)
 #'  }
 #' @export
 nrm_selection <- function(adj, predictors, 
@@ -33,7 +34,7 @@ nrm_selection.default <- function(adj,
                                  predictors, directed, selfloops, 
                                  pval = 0.05, xi = NULL, init = NULL, 
                                  ncores = NULL, ...) {
-  stop("Wrong format of predictors: Use createPredictors()")
+  stop("Wrong format of predictors: Use create_predictors()")
 }
 
 
@@ -64,6 +65,7 @@ nrm_selection.nrmpredictor <- function(adj,
                         selfloops = selfloops, ci = FALSE)
   xi <- null.m$xi
   ww <- predictors
+  totpred <- length(predictors)
   nms <- c()
   significance <- models <- list()
   DLs <- -null.m$loglikelihood/log(2) + nrow(xi)*(1+directed)/2*
@@ -75,11 +77,11 @@ nrm_selection.nrmpredictor <- function(adj,
   ## each steps choosing the best
   ## one according to AIC
   for (i in 1:length(predictors)) {
-    message("\nStep ", i, "...")
+    message("\nStep ", i, " of ", totpred, "...")
     ## select the best predictor
     ## among those in ww and store it
     ## in w
-    sel <- nrmChoose(adj = adj, 
+    sel <- nrm_choose(adj = adj, 
                      w.list = ww, xi = xi, 
                      directed = directed, 
                      selfloops = selfloops, 
@@ -93,9 +95,10 @@ nrm_selection.nrmpredictor <- function(adj,
                       nr.significance(mod0 = mod0, 
                                       mod1 = sel$model))
     csR2step <- c(csR2step, 
-                  coxsnellR2(mod0 = mod0, 
-                             mod1 = sel$model, 
-                             m = M))
+                  mcfaddenR2(directed = directed, selfloops=selfloops,
+                             mod0 = mod0, 
+                             mod1 = sel$model, nparam = sel$model$df-mod0$df
+                            ))
     csR2 <- c(csR2, coxsnellR2(mod0 = null.m, 
                                mod1 = sel$model, m = M))
     DLs <- c(DLs, sel$model$DL)
@@ -116,9 +119,12 @@ nrm_selection.nrmpredictor <- function(adj,
     models <- c(models, list(sel$model))
     ## initial values for parameter
     ## estimation in next step
-    init <- sel$model$coef
-    if (!is.null(default.init)) 
-      init <- c(init, default.init)
+    ### TODO: fix init
+    default.init[[sel$predictor]] <- NULL
+    init <- lapply(X = default.init, 
+                   FUN = function(w.new) {
+                     c(sel$model$coef, w.new)
+                   })
   }
   ## find best model according to
   ## significance: discard all
@@ -161,7 +167,7 @@ nrm_selection.nrmpredictor <- function(adj,
 #'   corresponding predictors in the list
 #'
 #' @export
-nrmChoose <- function(adj, w.list, 
+nrm_choose <- function(adj, w.list, 
                       xi = NULL, directed, selfloops, 
                       pval = 0.05, init = NULL, ncores = NULL) {
   # Computes all the models
@@ -181,13 +187,25 @@ nrmChoose <- function(adj, w.list,
                   parallel::detectCores() - 
                     1)
   }
-  nr.ms <- parallel::mclapply(X = w.list, 
-                              FUN = nrm, adj = adj, xi = xi, 
+  # if(TRUE){
+  if (is.null(init) | length(init)!=length(w.list)){
+    init <- NULL
+      nr.ms <- pbmcapply::pbmclapply(FUN = nrm, X=w.list, 
+                              adj = adj, xi = xi, 
                               directed = directed, selfloops = selfloops, 
-                              pval = pval, significance = FALSE, 
-                              init = init, mc.cores = ncores)
-  # to.add <- minAIC(nr.ms)
-  to.add <- findMDL(nr.ms)
+                              pval = pval, significance = FALSE, init=init, 
+                              mc.cores = ncores)
+  } else{
+    nr.ms <- pbmcapply::pbmcmapply(FUN = nrm, w=w.list, init=init, 
+                    MoreArgs = list(
+                      adj = adj, xi = xi, 
+                      directed = directed, selfloops = selfloops, 
+                      pval = pval, significance = FALSE
+                    ), SIMPLIFY = FALSE,
+                    mc.cores = ncores)
+  }
+  to.add <- minAIC(nr.ms)
+  # to.add <- findMDL(nr.ms)
   selected <- list(model = nr.ms[[to.add]], 
                    predictor = to.add, xi = xi)
   class(selected) <- "nrm_selection"
