@@ -16,7 +16,7 @@ blockModel <- bccm(adj = adj_karate, labels = vertexlabels, directed = F, selflo
 
 ## -----------------------------------------------------------------------------
 # obtain significance matrix
-signmat <- linkSignificance(adj_karate, mod, under = FALSE)
+signmat <- link_significance(adj_karate, mod, under = FALSE)
 
 # filter adjacency matrix
 adjfiltered <- adj_karate
@@ -40,7 +40,7 @@ plot(g)
 plot(gfiltered)
 
 ## -----------------------------------------------------------------------------
-signmat <- linkSignificance(adj_karate, blockModel, under=FALSE)
+signmat <- link_significance(adj_karate, blockModel, under=FALSE)
 
 # filter adjacency matrix
 adjfiltered <- adj_karate

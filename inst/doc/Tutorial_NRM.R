@@ -105,7 +105,6 @@ for(i in 1:nrow(shared_committee)){
     shared_committee[i, j] <- length(intersect(committees_i, committees_j))
   }
 }
-shared_committee[shared_committee == 0] <- 0.1 # replace zero-values
 shared_committee[1:5, 1:3]
 
 ## -----------------------------------------------------------------------------
@@ -116,24 +115,28 @@ for(i in 1:nrow(cospons_mat)){
     degreemat[i, j] <- sum(dt$degree[i], dt$degree[j])
   }
 }
-degreemat[degreemat == 0] <- .1
 
 ## -----------------------------------------------------------------------------
 age_activity_mat <- matrix(rep(dt$age, ncol(cospons_mat)),
                                 nrow = nrow(cospons_mat), byrow = FALSE)
 svp_activity_mat <- matrix(rep(dt$party, ncol(cospons_mat)),
                            nrow = nrow(cospons_mat), byrow = FALSE)
-svp_activity_mat <- ifelse(svp_activity_mat == 'SVP', 10, 1)
+svp_activity_mat <- ifelse(svp_activity_mat == 'SVP', exp(1), 1)
 
 ## -----------------------------------------------------------------------------
 age_popularity_mat <- matrix(rep(dt$age, ncol(cospons_mat)),
                                 nrow = nrow(cospons_mat), byrow = TRUE)
 svp_popularity_mat <- matrix(rep(dt$party, ncol(cospons_mat)),
                            nrow = nrow(cospons_mat), byrow = TRUE)
-svp_popularity_mat <- ifelse(svp_popularity_mat == 'SVP', 10, 1)
+svp_popularity_mat <- ifelse(svp_popularity_mat == 'SVP', exp(1), 1)
+
+## -----------------------------------------------------------------------------
+recip_cospons <- get_zero_dummy(recip_cospons, name = 'reciprocity')
+age_absdiffmat <- get_zero_dummy(age_absdiffmat, name = 'age')
+shared_committee <- get_zero_dummy(shared_committee, name = 'committee')
 
 ## ---- eval=FALSE,echo=TRUE----------------------------------------------------
-#  fit <- nrm(adj = cospons_mat, w = list(reciprocity = recip_cospons),
+#  fit <- nrm(adj = cospons_mat, w = recip_cospons,
 #             directed = TRUE, selfloops = FALSE, regular = FALSE)
 
 ## -----------------------------------------------------------------------------
@@ -146,7 +149,7 @@ summary(nfit1)
 nfit1 <- nrm(adj = cospons_mat, 
                       w = list(same_canton = canton_homophilymat), 
                       directed = TRUE,
-                      init = c(0.09))
+                      init = c(0.208))
 summary(nfit1)
 
 ## -----------------------------------------------------------------------------
@@ -154,42 +157,42 @@ texreg::screenreg(nfit1)
 
 ## -----------------------------------------------------------------------------
 nfit2 <- nrm(adj = cospons_mat, 
-             w = list(reciprocity = recip_cospons,
-                      #sharedpartner_in = shp_cospons_incoming,
-                      #sharedpartner_out = shp_cospons_outgoing, 
-                      party = party_homophilymat,
-                      canton = canton_homophilymat, 
-                      gender = gender_homophilymat,
-                      age = age_absdiffmat,
-                      committee = shared_committee,
-                      online_similarity = onlinesim_mat ), 
-             directed = TRUE, 
-             init = c(.1, .5, .1, 0, 0, 0, 0))
+             w = c(
+                   recip_cospons,
+                   list(party = party_homophilymat,
+                        canton = canton_homophilymat,
+                        gender = gender_homophilymat),
+                   age_absdiffmat,
+                   shared_committee,
+                   list(online_similarity = onlinesim_mat)
+             ), 
+             directed = TRUE,
+             init = c(.1,-.9, 1.2, .2, .2, 0, 0,0, -.2,-.1))
 
 ## -----------------------------------------------------------------------------
 screenreg(nfit2, 
-          groups = list('Endogenous' = 1, 
-                     'Homophily' = c(2:5), 
-                     'Exogenous' = c(6:7)))
+          groups = list('Endogenous' = 1:2, 
+                     'Homophily' = c(3:7), 
+                     'Exogenous' = c(8:10)))
 
 ## -----------------------------------------------------------------------------
 nfit3 <- nrm(adj = cospons_mat, 
-              w = list(degree = degreemat,
-                       reciprocity = recip_cospons,
-                       #sharedpartner_in = shp_cospons_incoming,
-                       #sharedpartner_out = shp_cospons_outgoing, 
-                       party = party_homophilymat,
-                       svp_in = svp_popularity_mat, 
-                       svp_out = svp_activity_mat,
-                       canton = canton_homophilymat, 
-                       gender = gender_homophilymat,
-                       age = age_absdiffmat,
-                       agein = age_popularity_mat,
-                       ageout = age_activity_mat,
-                       committee = shared_committee,
-                       online_similarity = onlinesim_mat), 
-              directed = TRUE, regular = TRUE, 
-              init = c(0, 0.1, 0.5, 0, 0, .1, 0, 0, 0, 0, .1, .01))
+              w = c(
+                get_zero_dummy(degreemat, name = 'degree'),
+                     recip_cospons,
+                list(party = party_homophilymat,
+                     svp_in = svp_popularity_mat, 
+                     svp_out = svp_activity_mat,
+                     canton = canton_homophilymat, 
+                     gender = gender_homophilymat),
+                     age_absdiffmat,
+                list(agein = age_popularity_mat,
+                     ageout = age_activity_mat),
+                     shared_committee,
+                list(online_similarity = onlinesim_mat)
+                ), 
+              directed = TRUE, regular = TRUE,
+              init = c(1,0,0,0, 0.1, 0.5, 0, 0, .1, 0,0, 0,0, .1, .01))
 summary(nfit3)
 
 ## -----------------------------------------------------------------------------
@@ -200,10 +203,10 @@ screenreg(list(nfit2, nfit3),
 fullfit <- ghype(graph = cospons_mat, directed = TRUE, selfloops = FALSE)
 
 ## -----------------------------------------------------------------------------
-nfit2omega <- data.frame(omega = nfit2$omega, 
-                         cosponsfull = c(cospons_mat), 
-                         age_absdiff = c(age_absdiffmat), 
-                         sameparty = c(party_homophilymat))
+nfit2omega <- data.frame(omega = as.vector(nfit2$omega), 
+                         cosponsfull = as.vector(cospons_mat), 
+                         age_absdiff = as.vector(age_absdiffmat$age), 
+                         sameparty = as.vector(party_homophilymat))
 nfit2omega[nfit2omega == 0] <- NA
 nfit2omega <- na.omit(nfit2omega)
 
