@@ -10,8 +10,8 @@ library(texreg, quietly = TRUE) # for regression tables
 library(ggplot2) # for plotting
 library(ggraph) #for network plots using ggplot2
 
-## ---- eval=FALSE, echo=FALSE--------------------------------------------------
-#  data("swissParliament_network", package = "ghypernet")
+## ----eval=FALSE, echo=FALSE---------------------------------------------------
+# data("swissParliament_network", package = "ghypernet")
 
 ## -----------------------------------------------------------------------------
 el <- adj2el(cospons_mat, directed = TRUE)
@@ -48,8 +48,8 @@ table(rownames(cospons_mat) == rownames(onlinesim_mat))
 recip_cospons <- reciprocity_stat(cospons_mat)
 recip_cospons[1:5, 1:3]
 
-## ---- out.width='100%', fig.align='center', fig.cap='Figure 1: Triadic closure: (a) undirected triangle, (b) transitive triplet, (c) edge-wise shared partners. Source: Brandenberger et al. [-@brandenberger2019quantifying].', echo=FALSE----
-knitr::include_graphics('images/tikz_nweffects.pdf')
+## ----out.width='100%', fig.align='center', fig.cap='Figure 1: Triadic closure: (a) undirected triangle, (b) transitive triplet, (c) edge-wise shared partners. Source: Brandenberger et al. [-@brandenberger2019quantifying].', echo=FALSE----
+knitr::include_graphics('./images/tikz_nweffects.pdf')
 
 ## -----------------------------------------------------------------------------
 shp_cospons_unweighted <- sharedPartner_stat(cospons_mat, directed = TRUE, weighted = FALSE)
@@ -135,9 +135,9 @@ recip_cospons <- get_zero_dummy(recip_cospons, name = 'reciprocity')
 age_absdiffmat <- get_zero_dummy(age_absdiffmat, name = 'age')
 shared_committee <- get_zero_dummy(shared_committee, name = 'committee')
 
-## ---- eval=FALSE,echo=TRUE----------------------------------------------------
-#  fit <- nrm(adj = cospons_mat, w = recip_cospons,
-#             directed = TRUE, selfloops = FALSE, regular = FALSE)
+## ----eval=FALSE,echo=TRUE-----------------------------------------------------
+# fit <- nrm(adj = cospons_mat, w = recip_cospons,
+#            directed = TRUE, selfloops = FALSE, regular = FALSE)
 
 ## -----------------------------------------------------------------------------
 nfit1 <- nrm(adj = cospons_mat, 
@@ -210,7 +210,7 @@ nfit2omega <- data.frame(omega = as.vector(nfit2$omega),
 nfit2omega[nfit2omega == 0] <- NA
 nfit2omega <- na.omit(nfit2omega)
 
-## ---- fig.height=4, fig.width=7-----------------------------------------------
+## ----fig.height=4, fig.width=7------------------------------------------------
 ggplot(nfit2omega, aes(x = age_absdiff, y = omega, color = factor(sameparty)))+
   geom_point(alpha = .1) +
   geom_smooth() + theme(legend.position = 'bottom') + 
@@ -221,7 +221,7 @@ ggplot(nfit2omega, aes(x = age_absdiff, y = omega, color = factor(sameparty)))+
 ## -----------------------------------------------------------------------------
 simnw <- rghype(nsamples = 1, model = nfit2, seed = 1253)
 
-## ---- fig.height=5, fig.width=5-----------------------------------------------
+## ----fig.height=5, fig.width=5------------------------------------------------
 ggraph(graph = simnw, layout = 'stress') +
   geom_edge_link(aes(filter = weight>5, alpha=weight)) +
   geom_node_point(aes(colour = dt$parlGroup), size=10*apply(simnw,1,sum)/max(apply(simnw,1,sum))) +

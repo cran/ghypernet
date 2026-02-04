@@ -8,7 +8,7 @@
 327x327 adjacency matrix
 }
 \source{
-\href{http://www.sociopatterns.org}{http://www.sociopatterns.org}
+\href{https://sociopatterns.org/}{https://sociopatterns.org/}
 }
 \usage{
 data(highschool.predictors)

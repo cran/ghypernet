@@ -1,3 +1,29 @@
+# ghypernet 1.1.2
+
+- removed dependency from `extraDistr` (orphaned package):
+* introduced helper functions for handling multivariate hypergeometric density and sampling: `dmvhyper_base` and `rmvhyper_base`.
+
+- fixed reversed dependency issues for dplyr:::id "no visible binding for global variable 'id'" errors. 
+
+- bug fixes:
+* `bccm()`: fixed bug that returned wrongly filled omegaBlock matrix. The bug did not affect the model fit itself.
+
+# ghypernet 1.1.1
+
+- new features:
+* extended testing scripts of package
+
+- bug fixes:
+* `logl()` and `rghype()`: fixed bug that treated as a hypergeometric model a ghype where all odds are equal to 0. Throws error instead.
+* `compute_xi()`: Fixed a bug that introduced spurious stubs for nodes with zero degrees when creating a Xi matrix without selfloops
+* `link_significance()`: fixed bug when under=TRUE, updated implementation to improve performance
+* `ghype()`: fixed computation of degrees of freedom for full model where xi has zero values
+
+# ghypernet 1.1.0.1
+
+- bug fixes:
+* `link_significance()`: When calling with under = FALSE and pval = FALSE was returning phi(0) = 1 instead of Pr(x>0)
+
 # ghypernet 1.1.0
 
 - function renaming:

@@ -31,6 +31,11 @@ rghype <- function(nsamples, model, m=NULL, multinomial=NULL, seed=NULL){
     n <- nrow(model$xi)
 
   omega <- model$omega[idx]
+  
+  ## throw error if all(omega == 0)
+  if(all(omega == 0))
+    stop('Not enough pairs with nonzero odds. (all(omega == 0))')
+  
   xi <- model$xi[idx]
   if (is.null(multinomial)) {
     # number of colors and number of
@@ -48,7 +53,7 @@ rghype <- function(nsamples, model, m=NULL, multinomial=NULL, seed=NULL){
     set.seed(seed)
   }
   if(all(omega == omega[1]) & m<23331){
-    rvec <- t(extraDistr::rmvhyper(nn = nsamples, n = xi, k = m))
+    rvec <- t(rmvhyper_base(nn = nsamples, n = xi, k = m))
   } else{
     if (multinomial) {
       p <- omega*xi/sum(omega*xi)

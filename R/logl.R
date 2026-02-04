@@ -101,6 +101,10 @@ logl_matrix <- function(adj, xi, omega,
   # links
   ix <- mat2vec.ix(adj, directed, selfloops)
   
+  ## throw error if all(omega == 0)
+  if(all(omega[ix] == 0))
+    stop('Not enough pairs with nonzero odds. (all(omega == 0))')
+  
   if (is.null(multinomial)) {
     if (requireNamespace("BiasedUrn",
                          quietly = TRUE) && sum(ix) <
@@ -156,18 +160,13 @@ logl_hypergeom <- function(adj,
   # Returns the log-likelihood of
   # the model given by 'xi' and
   # 'omega'.
-  if (!requireNamespace("extraDistr",
-                        quietly = TRUE)) {
-    stop("extraDistr needed for this function to work. Please install it.",
-         call. = FALSE)
-  }
+
   # get indices
   ix <- mat2vec.ix(adj, directed,
                    selfloops)
   # compute likelihood according
-  # to wallenius distribution: it
-  # uses BiasedUrn package
-  extraDistr::dmvhyper(x = adj[ix],
+  # to hypergeometric distribution
+  dmvhyper_base(x = adj[ix],
                        k = sum(adj[ix]), n = xi[ix],
                        log = TRUE)
 }
